@@ -3,6 +3,7 @@ package json
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"sort"
 	"strconv"
@@ -36,6 +37,10 @@ type Node struct {
 	DataType string
 
 	level int
+}
+
+func (n Node) String() string {
+	return fmt.Sprintf("[%s] %s(%s)", NodeNames[n.Type], n.DataType, n.Data)
 }
 
 // ChildNodes gets all child nodes of the node.
