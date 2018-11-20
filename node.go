@@ -15,8 +15,18 @@ const (
 	DoctypeNode   = NodeType(html.DoctypeNode)
 	AttributeNode = 100
 	AnyNode       = 101
-	// Add json node types
 )
+
+var NodeNames = map[NodeType]string{
+	ErrorNode:     "ErrorNode",
+	DocumentNode:  "DocumentNode",
+	ElementNode:   "ElementNode",
+	TextNode:      "TextNode",
+	CommentNode:   "CommentNode",
+	DoctypeNode:   "DoctypeNode",
+	AttributeNode: "AttributeNode",
+	AnyNode:       "AnyNode",
+}
 
 type Node interface {
 	Parent() Node
@@ -26,6 +36,8 @@ type Node interface {
 	NextSibling() Node
 	Type() NodeType
 	Data() string
+	InnerText() string
+	DataType() string
 	Attr() []Attribute
 }
 

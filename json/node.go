@@ -7,40 +7,48 @@ import (
 	"io"
 	"sort"
 	"strconv"
+
+	base "src.userspace.com.au/query"
 )
 
-// A NodeType is the type of a Node.
-type NodeType uint
-
-const (
-	// DocumentNode the root of the document tree.
-	DocumentNode NodeType = iota
-	// ElementNode is an element.
-	ElementNode
-	// TextNode is the text content of a node.
-	TextNode
-)
-
-var NodeNames = map[NodeType]string{
-	DocumentNode: "DocumentNode",
-	ElementNode:  "ElementNode",
-	TextNode:     "TextNode",
-}
-
-// A Node consists of a NodeType and some Data (tag name for
+// A Node consists of a NodeType and some data (tag name for
 // element nodes, content for text) and are part of a tree of Nodes.
 type Node struct {
-	Parent, PrevSibling, NextSibling, FirstChild, LastChild *Node
+	parent, prevSibling, nextSibling, firstChild, lastChild *Node
 
-	Type     NodeType
-	Data     string
-	DataType string
+	nodeType base.NodeType
+	data     string
+	dataType string
 
 	level int
 }
 
+func (n *Node) Parent() base.Node {
+	if n.parent == nil {
+		return nil
+	}
+	return n.parent
+}
+func (n *Node) NextSibling() base.Node {
+	if n.nextSibling == nil {
+		return nil
+	}
+	return n.nextSibling
+}
+func (n *Node) FirstChild() base.Node {
+	if n.firstChild == nil {
+		return nil
+	}
+	return n.firstChild
+}
+func (n *Node) PrevSibling() base.Node { return n.prevSibling }
+func (n *Node) LastChild() base.Node   { return n.lastChild }
+func (n *Node) Type() base.NodeType    { return base.NodeType(n.nodeType) }
+func (n *Node) DataType() string       { return n.dataType }
+func (n *Node) Attr() []base.Attribute { return nil }
+
 func (n Node) String() string {
-	return fmt.Sprintf("[%s] %s(%s)", NodeNames[n.Type], n.DataType, n.Data)
+	return fmt.Sprintf("[%s] %s(%s)", base.NodeNames[n.nodeType], n.dataType, n.data)
 }
 
 func (n Node) PrintTree(level int) {
@@ -48,7 +56,7 @@ func (n Node) PrintTree(level int) {
 		fmt.Printf("  ")
 	}
 	fmt.Println(n)
-	for _, c := range n.ChildNodes() {
+	for c := n.firstChild; c != nil; c = c.nextSibling {
 		c.PrintTree(level + 1)
 	}
 }
@@ -56,34 +64,35 @@ func (n Node) PrintTree(level int) {
 // ChildNodes gets all child nodes of the node.
 func (n *Node) ChildNodes() []*Node {
 	var a []*Node
-	for nn := n.FirstChild; nn != nil; nn = nn.NextSibling {
+	for nn := n.firstChild; nn != nil; nn = nn.nextSibling {
 		a = append(a, nn)
 	}
 	return a
 }
 
+// Data gets the value of the node and all its child nodes.
+func (n *Node) Data() string {
+	return n.data
+}
+
 // InnerText gets the value of the node and all its child nodes.
 func (n *Node) InnerText() string {
-	var output func(*bytes.Buffer, *Node)
-	output = func(buf *bytes.Buffer, n *Node) {
-		if n.Type == TextNode {
-			buf.WriteString(n.Data)
-			return
-		}
-		for child := n.FirstChild; child != nil; child = child.NextSibling {
-			output(buf, child)
+	var buf bytes.Buffer
+	if n.nodeType == base.TextNode {
+		buf.WriteString(n.data)
+	} else {
+		for child := n.firstChild; child != nil; child = child.nextSibling {
+			buf.WriteString(child.InnerText())
 		}
 	}
-	var buf bytes.Buffer
-	output(&buf, n)
 	return buf.String()
 }
 
 // SelectElement finds the first of child elements with the
 // specified name.
 func (n *Node) SelectElement(name string) *Node {
-	for nn := n.FirstChild; nn != nil; nn = nn.NextSibling {
-		if nn.Data == name {
+	for nn := n.firstChild; nn != nil; nn = nn.nextSibling {
+		if nn.data == name {
 			return nn
 		}
 	}
@@ -93,22 +102,22 @@ func (n *Node) SelectElement(name string) *Node {
 func parseValue(x interface{}, top *Node, level int) {
 	addNode := func(n *Node) {
 		if n.level == top.level {
-			top.NextSibling = n
-			n.PrevSibling = top
-			n.Parent = top.Parent
-			if top.Parent != nil {
-				top.Parent.LastChild = n
+			top.nextSibling = n
+			n.prevSibling = top
+			n.parent = top.parent
+			if top.parent != nil {
+				top.parent.lastChild = n
 			}
 		} else if n.level > top.level {
-			n.Parent = top
-			if top.FirstChild == nil {
-				top.FirstChild = n
-				top.LastChild = n
+			n.parent = top
+			if top.firstChild == nil {
+				top.firstChild = n
+				top.lastChild = n
 			} else {
-				t := top.LastChild
-				t.NextSibling = n
-				n.PrevSibling = t
-				top.LastChild = n
+				t := top.lastChild
+				t.nextSibling = n
+				n.prevSibling = t
+				top.lastChild = n
 			}
 		}
 	}
@@ -118,33 +127,31 @@ func parseValue(x interface{}, top *Node, level int) {
 	switch v := x.(type) {
 	case []interface{}:
 		for _, vv := range v {
-			n := &Node{Type: ElementNode, level: level, DataType: "arrayitem"}
+			n := &Node{nodeType: base.ElementNode, level: level, dataType: "arrayitem"}
 			addNode(n)
 			parseValue(vv, n, level+1)
 		}
 	case map[string]interface{}:
-		// The Go’s map iteration order is random.
-		// (https://blog.golang.org/go-maps-in-action#Iteration-order)
 		var keys []string
 		for key := range v {
 			keys = append(keys, key)
 		}
 		sort.Strings(keys)
 		for _, key := range keys {
-			n := &Node{Data: key, Type: ElementNode, level: level, DataType: "object"}
+			n := &Node{data: key, nodeType: base.ElementNode, level: level, dataType: "object"}
 			addNode(n)
 			parseValue(v[key], n, level+1)
 		}
 	case string:
-		n := &Node{Data: v, Type: TextNode, level: level, DataType: "string"}
+		n := &Node{data: v, nodeType: base.TextNode, level: level, dataType: "string"}
 		addNode(n)
 	case float64:
 		s := strconv.FormatFloat(v, 'f', -1, 64)
-		n := &Node{Data: s, Type: TextNode, level: level, DataType: "number"}
+		n := &Node{data: s, nodeType: base.TextNode, level: level, dataType: "number"}
 		addNode(n)
 	case bool:
 		s := strconv.FormatBool(v)
-		n := &Node{Data: s, Type: TextNode, level: level, DataType: "boolean"}
+		n := &Node{data: s, nodeType: base.TextNode, level: level, dataType: "boolean"}
 		addNode(n)
 	}
 }
@@ -156,7 +163,7 @@ func Parse(r io.Reader) (*Node, error) {
 	if err := decoder.Decode(&v); err != nil {
 		return nil, err
 	}
-	doc := &Node{Type: DocumentNode}
+	doc := &Node{nodeType: base.DocumentNode}
 	parseValue(v, doc, 1)
 	return doc, nil
 }

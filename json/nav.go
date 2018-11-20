@@ -1,8 +1,6 @@
 package json
 
 import (
-	"fmt"
-
 	base "src.userspace.com.au/query"
 )
 
@@ -16,20 +14,11 @@ func (a *NodeNavigator) Current() *Node {
 }
 
 func (a *NodeNavigator) NodeType() base.NodeType {
-	switch a.cur.Type {
-	case TextNode:
-		return base.TextNode
-	case DocumentNode:
-		return base.DocumentNode
-	case ElementNode:
-		return base.ElementNode
-	default:
-		panic(fmt.Sprintf("unknown node type %v", a.cur.Type))
-	}
+	return a.cur.nodeType
 }
 
 func (a *NodeNavigator) LocalName() string {
-	return a.cur.Data
+	return a.cur.data
 
 }
 
@@ -38,11 +27,11 @@ func (a *NodeNavigator) Prefix() string {
 }
 
 func (a *NodeNavigator) Value() string {
-	switch a.cur.Type {
-	case ElementNode:
-		return a.cur.InnerText()
-	case TextNode:
-		return a.cur.Data
+	switch a.cur.nodeType {
+	case base.ElementNode:
+		return a.cur.data
+	case base.TextNode:
+		return a.cur.data
 	}
 	return ""
 }
@@ -57,7 +46,7 @@ func (a *NodeNavigator) MoveToRoot() {
 }
 
 func (a *NodeNavigator) MoveToParent() bool {
-	if n := a.cur.Parent; n != nil {
+	if n := a.cur.parent; n != nil {
 		a.cur = n
 		return true
 	}
@@ -69,7 +58,7 @@ func (x *NodeNavigator) MoveToNextAttribute() bool {
 }
 
 func (a *NodeNavigator) MoveToChild() bool {
-	if n := a.cur.FirstChild; n != nil {
+	if n := a.cur.firstChild; n != nil {
 		a.cur = n
 		return true
 	}
@@ -77,7 +66,7 @@ func (a *NodeNavigator) MoveToChild() bool {
 }
 
 func (a *NodeNavigator) MoveToFirst() bool {
-	for n := a.cur.PrevSibling; n != nil; n = n.PrevSibling {
+	for n := a.cur.prevSibling; n != nil; n = n.prevSibling {
 		a.cur = n
 	}
 	return true
@@ -88,7 +77,7 @@ func (a *NodeNavigator) String() string {
 }
 
 func (a *NodeNavigator) MoveToNext() bool {
-	if n := a.cur.NextSibling; n != nil {
+	if n := a.cur.nextSibling; n != nil {
 		a.cur = n
 		return true
 	}
@@ -96,7 +85,7 @@ func (a *NodeNavigator) MoveToNext() bool {
 }
 
 func (a *NodeNavigator) MoveToPrevious() bool {
-	if n := a.cur.PrevSibling; n != nil {
+	if n := a.cur.prevSibling; n != nil {
 		a.cur = n
 		return true
 	}

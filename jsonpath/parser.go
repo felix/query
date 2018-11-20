@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"src.userspace.com.au/query/json"
+	base "src.userspace.com.au/query"
 	"src.userspace.com.au/query/lexer"
 )
 
@@ -162,58 +162,52 @@ func (p *Parser) parsePredicateExprSelector() (Selector, error) {
 }
 
 // rootSelector checks node is root
-func rootSelector(n *json.Node) bool {
+func rootSelector(n base.Node) bool {
 	result := false
-	if n.Parent != nil && n.Parent.Type == json.DocumentNode {
+	parent := n.Parent()
+	if parent != nil && parent.Type() == base.DocumentNode {
 		result = true
 	} else {
-		result = (n.Type == json.DocumentNode)
+		result = (n.Type() == base.DocumentNode)
 	}
 	return result
 }
 
 // wildcardSelector returns true
-func wildcardSelector(n *json.Node) bool {
+func wildcardSelector(n base.Node) bool {
 	return true
 }
 
 // childSelector creates a selector for c being a child of p
 func childSelector(p, c Selector) Selector {
-	return func(n *json.Node) bool {
-		/*
-			for child := n.FirstChild; child != nil; child = child.NextSibling {
-				if p(n) && c(child) {
-					return true
-				}
-			}
-			return false
-		*/
-		result := (c(n) && n.Parent != nil && p(n.Parent))
+	return func(n base.Node) bool {
+		parent := n.Parent()
+		result := (c(n) && parent != nil && p(parent))
 		return result
 	}
 }
 
 // nameSelector generates selector for object key == k
 func nameSelector(k string) Selector {
-	return func(n *json.Node) bool {
-		result := (n.Type == json.ElementNode && n.Data == k)
+	return func(n base.Node) bool {
+		result := (n.Type() == base.ElementNode && n.Data() == k)
 		return result
 	}
 }
 
 // recursiveSelector matches any node below which matches a
 func recursiveSelector(a Selector) Selector {
-	return func(n *json.Node) bool {
-		if n.Type != json.ElementNode {
+	return func(n base.Node) bool {
+		if n.Type() != base.ElementNode {
 			return false
 		}
 		return hasRecursiveMatch(n, a)
 	}
 }
 
-func hasRecursiveMatch(n *json.Node, a Selector) bool {
-	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		if a(c) || (c.Type == json.ElementNode && hasRecursiveMatch(c, a)) {
+func hasRecursiveMatch(n base.Node, a Selector) bool {
+	for c := n.FirstChild(); c != nil; c = c.NextSibling() {
+		if a(c) || (c.Type() == base.ElementNode && hasRecursiveMatch(c, a)) {
 			return true
 		}
 	}
@@ -222,17 +216,18 @@ func hasRecursiveMatch(n *json.Node, a Selector) bool {
 
 // arrayIndexSelector generates selector for node being idx index of parent
 func arrayIndexSelector(idx int64) Selector {
-	return func(n *json.Node) bool {
-		if n.DataType != "arrayitem" {
+	return func(n base.Node) bool {
+		if n.DataType() != "arrayitem" {
 			return false
 		}
-		if n.Parent == nil {
+		parent := n.Parent()
+
+		if parent == nil {
 			return false
 		}
 
-		parent := n.Parent
 		i := int64(0)
-		for c := parent.FirstChild; c != nil && i <= idx; c = c.NextSibling {
+		for c := parent.FirstChild(); c != nil && i <= idx; c = c.NextSibling() {
 			if i == idx && c == n {
 				return true
 			}
@@ -244,9 +239,9 @@ func arrayIndexSelector(idx int64) Selector {
 
 // typeSelector matches a node with type t
 func typeSelector(t string) Selector {
-	return func(n *json.Node) bool {
+	return func(n base.Node) bool {
 		// FIXME
-		if n.DataType == t {
+		if n.DataType() == t {
 			return true
 		}
 		return false

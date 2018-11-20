@@ -1,7 +1,6 @@
 package jsonpath
 
 import (
-	//"fmt"
 	"strings"
 	"testing"
 
@@ -84,9 +83,9 @@ func TestParse(t *testing.T) {
 		}
 
 		if tt.expect == "" && actualText != "" {
-			t.Fatalf("MatchFirst(%s) => %s, expected nothing", tt.src, actualText)
+			t.Fatalf("MatchFirst(%s, %s) => %s, expected nothing", tt.path, tt.src, actualText)
 		} else if actualText != tt.expect {
-			t.Fatalf("MatchFirst(%s) => %s, expected %s", tt.src, actualText, tt.expect)
+			t.Fatalf("MatchFirst(%s, %s) => %s, expected %s", tt.path, tt.src, actualText, tt.expect)
 		}
 	}
 }
