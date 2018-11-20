@@ -46,7 +46,6 @@ func TestValidStates(t *testing.T) {
 				lexer.Token{Type: TAbsolute, Value: "$"},
 				lexer.Token{Type: TChildDot, Value: "."},
 				lexer.Token{Type: TName, Value: "one"},
-				lexer.Token{Type: TChildEnd, Value: ""},
 				lexer.Token{Type: TChildDot, Value: "."},
 				lexer.Token{Type: TName, Value: "two"},
 			},
@@ -142,6 +141,20 @@ func TestValidStates(t *testing.T) {
 				lexer.Token{Type: TChildStart, Value: "["},
 				lexer.Token{Type: TQuotedName, Value: "'one'"},
 				lexer.Token{Type: TChildEnd, Value: "]"},
+			},
+		},
+		{
+			path: "$.a.b.c.d",
+			tokens: []lexer.Token{
+				lexer.Token{Type: TAbsolute, Value: "$"},
+				lexer.Token{Type: TChildDot, Value: "."},
+				lexer.Token{Type: TName, Value: "a"},
+				lexer.Token{Type: TChildDot, Value: "."},
+				lexer.Token{Type: TName, Value: "b"},
+				lexer.Token{Type: TChildDot, Value: "."},
+				lexer.Token{Type: TName, Value: "c"},
+				lexer.Token{Type: TChildDot, Value: "."},
+				lexer.Token{Type: TName, Value: "d"},
 			},
 		},
 	}

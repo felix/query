@@ -24,6 +24,10 @@ type Token struct {
 	Line     int
 }
 
+func (t Token) String() string {
+	return fmt.Sprintf("[%d] %s", t.Type, t.Value)
+}
+
 type Lexer struct {
 	source     string
 	start      int

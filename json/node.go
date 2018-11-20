@@ -43,6 +43,16 @@ func (n Node) String() string {
 	return fmt.Sprintf("[%s] %s(%s)", NodeNames[n.Type], n.DataType, n.Data)
 }
 
+func (n Node) PrintTree(level int) {
+	for i := 1; i <= level; i++ {
+		fmt.Printf("  ")
+	}
+	fmt.Println(n)
+	for _, c := range n.ChildNodes() {
+		c.PrintTree(level + 1)
+	}
+}
+
 // ChildNodes gets all child nodes of the node.
 func (n *Node) ChildNodes() []*Node {
 	var a []*Node
@@ -108,7 +118,7 @@ func parseValue(x interface{}, top *Node, level int) {
 	switch v := x.(type) {
 	case []interface{}:
 		for _, vv := range v {
-			n := &Node{Type: ElementNode, level: level, DataType: "array"}
+			n := &Node{Type: ElementNode, level: level, DataType: "arrayitem"}
 			addNode(n)
 			parseValue(vv, n, level+1)
 		}

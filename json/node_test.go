@@ -35,7 +35,7 @@ func TestParseJsonNumberArray(t *testing.T) {
 
 func TestParseJsonObject(t *testing.T) {
 	s := `{
-"name":"John",
+    "name":"John",
 	"age":31,
 	  "city":"New York"
 	   }`
@@ -72,6 +72,7 @@ func TestParseJsonObjectArray(t *testing.T) {
 			{ "name":"Fiat", "models":[ "500", "Panda" ] }
 			 ]`
 	doc, err := parseString(s)
+	doc.PrintTree(0)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -79,12 +79,14 @@ func stepState(l *lexer.Lexer) lexer.StateFunc {
 	for {
 		switch t := l.Next(); {
 		case t == '.':
+			// Don't emit dot as it is used for subsequent child
 			if l.Peek() == '.' {
 				l.Emit(TRecursive)
 				return stepState
 			}
 			l.Emit(TChildDot)
 			return childState
+
 		case t == '[':
 			l.Emit(TChildStart)
 			return childState
@@ -109,7 +111,7 @@ func childState(l *lexer.Lexer) lexer.StateFunc {
 			return childState
 
 		case t == '\'' || t == '"':
-			// TODO what other characters?
+			// FIXME what other characters?
 			l.AcceptRun(alphanumeric + "-_")
 			l.Accept(string(t))
 			l.Emit(TQuotedName)
@@ -121,16 +123,16 @@ func childState(l *lexer.Lexer) lexer.StateFunc {
 			l.Emit(TName)
 			return childState
 
+		case t == '.':
+			l.Backup()
+			return stepState
+
 		case t == '[':
+			// FIXME predicate or another child
 			l.Emit(TPredicateStart)
 			return predicateState
 
 		case t == ']':
-			l.Emit(TChildEnd)
-			return stepState
-
-		case t == '.':
-			l.Backup()
 			l.Emit(TChildEnd)
 			return stepState
 

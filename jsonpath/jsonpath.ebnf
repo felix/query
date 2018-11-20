@@ -1,0 +1,233 @@
+path
+    = absolute path
+    | relative path
+    ;
+
+absolute path
+    = "$", [ qualified path ]
+    ;
+
+qualified path
+    = recursive location
+    | relative location
+    ;
+
+recursive location
+    = "..", relative path
+    ;
+
+relative location
+    = ".", relative path
+    ;
+
+relative path
+    = step, [ qualified path ]
+    ;
+
+step
+    = node test, [ predicate ]
+    ;
+
+node test
+    = node type, "(", ")"
+    | name test
+    ;
+
+name test
+    = "*"
+    | name
+    ;
+
+node type
+    = "object"
+    | "array"
+    | "string"
+    | "number"
+    | "boolean"
+    | "null"
+    ;
+
+name
+    = "'", quoted name character, { quoted name character }, "'"
+    = name character, { name character }
+    ;
+
+quoted name character
+    = ? any unicode character except ''' (single quote), unlesss it is quoted with a '\' (backslash) ?
+    ;
+
+name character
+    = ? any unicode character except '.' and '[' ?
+    ;
+
+predicate
+    = "[", predicate expression , "]"
+    ;
+
+predicate expression
+    = wildcard
+    | subscript
+    | slice
+    | union
+    | filter
+    ;
+
+wildcard
+    = "*"
+    ;
+
+subscript
+     = signed integer
+     ;
+
+slice
+    = [ signed integer ], ":", [ signed integer ], [ ":", [ non-zero signed integer ] ]
+    ;
+
+union
+    = integer, ",", integer
+    | union expression, ",", union expression
+    ;
+
+union expression
+    = relative path
+    | filter expression
+    ;
+
+filter
+    = "?(", filter expression, ")"
+    ;
+
+filter expression
+    = or expr
+    ;
+
+or expr
+    = and expr, [ "or", or expr ]
+    ;
+
+and expr
+    = equality expr, [ "and", and expr ]
+    ;
+
+equality expr
+    = relational expr, [ equality op, equality expr ]
+    ;
+
+equality op
+    = "="
+    | "!="
+    ;
+
+relational expr
+    = additive expr, [ relational op, relational expr ]
+    ;
+
+relational op
+    = ">"
+    | "<"
+    | ">="
+    | "<="
+    ;
+
+additive expr
+    = multiplicative expr, [ additive op, additive expr ]
+    ;
+
+additive op
+    = "+"
+    | "-"
+    ;
+
+multiplictive expr
+    = unary expr, [ multiplicative op, multiplicative expr ]
+    ;
+
+multiplicative op
+    = "*"
+    | "/"
+    | "%"
+    ;
+
+unary expr
+    = "@", qualified path
+    | number
+    | string
+    | boolean
+    | "null"
+    ;
+
+number
+    = signed integer, [ fractional part ], [ exponent ]
+    ;
+
+fractional part
+    = ".", digit, { digit }
+    ;
+
+exponent
+    = e, digit, { digit }
+    ;
+
+e
+    = "e" | "E", [ "+" | "-" ]
+    ;
+
+string
+    = """, { character | escape }, """
+    ;
+
+character
+    = ? any unicode character except " or \ or control characters ?
+    ;
+
+escape
+    = "\""
+    | "\\"
+    | "\/"
+    | "\b"
+    | "\f"
+    | "\n"
+    | "\r"
+    | "\t"
+    | "\u", 4 * hex digit
+    ;
+
+hex digit
+    = 2 * ( digit |  hex lower | hex upper )
+    ;
+
+boolean
+    = "true"
+    | "false"
+    ;
+
+integer
+    = [ "+" ], ( "0" | digit one to nine, { digit } )
+    ;
+
+signed integer
+    = [ "-" ], integer
+    ;
+
+non-zero signed integer
+    = [ "-" ], digit one to nine, { digit }
+    ;
+
+digit one to nine
+    = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+    ;
+
+digit
+    = "0" | digit one to nine
+    ;
+
+hex lower
+    = "a" | "b" | "c" | "d" | "e" | "f"
+    ;
+
+hex upper
+    = "A" | "B" | "C" | "D" | "E" | "F"
+    ;
+
+(* vim: set ft=ebnf : *)

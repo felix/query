@@ -2,9 +2,9 @@ package jsonpath
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
-	//base "src.userspace.com.au/query"
 	"src.userspace.com.au/query/json"
 	"src.userspace.com.au/query/lexer"
 )
@@ -24,95 +24,151 @@ func (p *Parser) next() (done bool) {
 	if p.tok != nil {
 		p.pos = p.tok.Position
 	}
-	fmt.Printf("%s(%d): '%s'\n", tokenNames[p.tok.Type], p.tok.Type, p.tok.Value)
 	return p.tok != nil && !done
 }
 
 func (p *Parser) Parse(input string) (Selector, error) {
+	var sel, nr Selector
+	var err error
+
 	p.l = lexer.New(input, pathState)
 	p.l.Start()
 
 	// First token
 	p.next()
+
 	if p.tok.Type != TAbsolute {
+		// TODO does jsonpath have relative searches
 		return nil, fmt.Errorf("expected root, got %s", p.tok.Value)
 	}
 
-	result, err := p.parseQualifiedSelector()
-	if err != nil {
-		return nil, err
+	p.next()
+
+	if p.tok.Type == lexer.EOFToken {
+		return rootSelector, nil
 	}
-	return childSelector(rootSelector, result), nil
+
+	sel = rootSelector
+
+	for {
+		switch p.tok.Type {
+		case TRecursive:
+			p.next()
+			p.next()
+			if nr, err = p.parseStepSelector(); err != nil {
+				return nil, err
+			}
+			sel = recursiveSelector(nr)
+
+		case TChildDot:
+			p.next()
+			if nr, err = p.parseStepSelector(); err != nil {
+				return nil, err
+			}
+			sel = childSelector(sel, nr)
+		default:
+			return sel, nil
+		}
+	}
+	panic("unreachable")
 }
 
-// parseQualifiedSelector
-func (p *Parser) parseQualifiedSelector() (result Selector, err error) {
+func (p *Parser) parseStepSelector() (Selector, error) {
+	var sel, nr Selector
+	var err error
+
+	sel = p.parseNodeTestSelector()
 	p.next()
 
 	switch p.tok.Type {
-	case TRecursive:
-		nr, _ := p.parseStepSelector()
-		result = recursiveSelector(nr)
+	case TPredicateStart:
+		p.next()
+		if nr, err = p.parsePredicateExprSelector(); err != nil {
+			return nil, err
+		}
+		sel = childSelector(sel, nr)
 
-	case TChildDot, TChildStart:
-		result, err = p.parseStepSelector()
+	case lexer.EOFToken:
+		return sel, nil
 
 	default:
-		return nil, fmt.Errorf("expected . or .. or something, got %s", p.tok.Value)
 	}
-	return result, nil
+	return sel, nil
 }
 
-func (p *Parser) parseStepSelector() (result Selector, err error) {
-	p.next()
-	result, err = p.parseNodeTestSelector()
-	if err != nil {
-		return nil, err
-	}
-	p.next()
-	if p.tok.Type == TPredicateStart {
-		// TODO
-	}
-	return result, nil
-}
-
-func (p *Parser) parseNodeTestSelector() (result Selector, err error) {
+func (p *Parser) parseNodeTestSelector() (sel Selector) {
 	switch p.tok.Type {
 	case TName:
 		/*
 			switch p.tok.Value {
 			case "object", "array", "string", "number", "boolean", "null":
 				// TODO
-				//result = typeSelector(p.tok.Value)
+				//sel = typeSelector(p.tok.Value)
 			default:
 			}
 		*/
-		result = nameSelector(p.tok.Value)
+		sel = nameSelector(p.tok.Value)
+
+	case TQuotedName:
+		sel = nameSelector(strings.Trim(p.tok.Value, `"'`))
+
 	case TWildcard:
-		result = wildcardSelector
+		sel = wildcardSelector
+
 	default:
-		fmt.Println("here: ", tokenNames[p.tok.Type])
 	}
-	return result, err
+	return sel
 }
 
-func (p *Parser) parseChildSelector() Selector {
-	var result Selector
-	p.next()
-	switch p.tok.Type {
-	case TQuotedName:
-		result = nameSelector(strings.Trim(p.tok.Value, `"'`))
-	case TName:
-		result = nameSelector(p.tok.Value)
+func (p *Parser) parsePredicateExprSelector() (Selector, error) {
+	var err error
+
+	if p.tok.Type != TNumber {
+		return nil, fmt.Errorf("expecting number")
 	}
+
+	num, err := strconv.ParseInt(p.tok.Value, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	return arrayIndexSelector(num), nil
+	/* TODO
+	var els []int64
+	if p.tok.Type == TPredicateEnd {
+		return arrayIndexSelector(num), nil
+	}
+
+	els = append(els, num)
+
 	p.next()
-	return result
+
+	if p.tok.Type == TRange {
+		// FIXME
+		p.next()
+		num, err := strconv.ParseInt(p.tok.Value, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		els = append(els, num)
+		// We have start and finish range
+	}
+	if p.tok.Type == TUnion {
+		// FIXME
+	}
+	}
+	return childSelector(rootSelector, arrayIndexSelector(idx)), nil
+	return sel, nil
+	*/
 }
 
 // rootSelector checks node is root
 func rootSelector(n *json.Node) bool {
-	result := (n.Type == json.DocumentNode)
-	fmt.Printf("rootSelector => type: %s, val: %s, result: %t\n", json.NodeNames[n.Type], n.Data, result)
+	result := false
+	if n.Parent != nil && n.Parent.Type == json.DocumentNode {
+		result = true
+	} else {
+		result = (n.Type == json.DocumentNode)
+	}
 	return result
 }
 
@@ -124,9 +180,15 @@ func wildcardSelector(n *json.Node) bool {
 // childSelector creates a selector for c being a child of p
 func childSelector(p, c Selector) Selector {
 	return func(n *json.Node) bool {
-		fmt.Printf("childSelector => type: %s, val: %s\n", json.NodeNames[n.Type], n.Data)
+		/*
+			for child := n.FirstChild; child != nil; child = child.NextSibling {
+				if p(n) && c(child) {
+					return true
+				}
+			}
+			return false
+		*/
 		result := (c(n) && n.Parent != nil && p(n.Parent))
-		fmt.Printf("childSelector => type: %s, val: %s, result: %t\n", json.NodeNames[n.Type], n.Data, result)
 		return result
 	}
 }
@@ -135,7 +197,6 @@ func childSelector(p, c Selector) Selector {
 func nameSelector(k string) Selector {
 	return func(n *json.Node) bool {
 		result := (n.Type == json.ElementNode && n.Data == k)
-		fmt.Printf("nameSelector => type: %s, val: %s, result: %t\n", json.NodeNames[n.Type], n.Data, result)
 		return result
 	}
 }
@@ -159,9 +220,32 @@ func hasRecursiveMatch(n *json.Node, a Selector) bool {
 	return false
 }
 
+// arrayIndexSelector generates selector for node being idx index of parent
+func arrayIndexSelector(idx int64) Selector {
+	return func(n *json.Node) bool {
+		if n.DataType != "arrayitem" {
+			return false
+		}
+		if n.Parent == nil {
+			return false
+		}
+
+		parent := n.Parent
+		i := int64(0)
+		for c := parent.FirstChild; c != nil && i <= idx; c = c.NextSibling {
+			if i == idx && c == n {
+				return true
+			}
+			i++
+		}
+		return false
+	}
+}
+
 // typeSelector matches a node with type t
 func typeSelector(t string) Selector {
 	return func(n *json.Node) bool {
+		// FIXME
 		if n.DataType == t {
 			return true
 		}
