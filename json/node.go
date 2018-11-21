@@ -47,6 +47,24 @@ func (n *Node) Type() base.NodeType    { return base.NodeType(n.nodeType) }
 func (n *Node) DataType() string       { return n.dataType }
 func (n *Node) Attr() []base.Attribute { return nil }
 
+// Data gets the value of the node and all its child nodes.
+func (n *Node) Data() string {
+	return n.data
+}
+
+// InnerText gets the value of the node and all its child nodes.
+func (n *Node) InnerText() string {
+	var buf bytes.Buffer
+	if n.nodeType == base.TextNode {
+		buf.WriteString(n.data)
+	} else {
+		for child := n.firstChild; child != nil; child = child.nextSibling {
+			buf.WriteString(child.InnerText())
+		}
+	}
+	return buf.String()
+}
+
 func (n Node) String() string {
 	return fmt.Sprintf("[%s] %s(%s)", base.NodeNames[n.nodeType], n.dataType, n.data)
 }
@@ -68,24 +86,6 @@ func (n *Node) ChildNodes() []*Node {
 		a = append(a, nn)
 	}
 	return a
-}
-
-// Data gets the value of the node and all its child nodes.
-func (n *Node) Data() string {
-	return n.data
-}
-
-// InnerText gets the value of the node and all its child nodes.
-func (n *Node) InnerText() string {
-	var buf bytes.Buffer
-	if n.nodeType == base.TextNode {
-		buf.WriteString(n.data)
-	} else {
-		for child := n.firstChild; child != nil; child = child.nextSibling {
-			buf.WriteString(child.InnerText())
-		}
-	}
-	return buf.String()
 }
 
 // SelectElement finds the first of child elements with the

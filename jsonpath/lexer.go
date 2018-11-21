@@ -4,7 +4,7 @@ import (
 	//"fmt"
 	"strings"
 
-	"src.userspace.com.au/query/lexer"
+	"src.userspace.com.au/lexer"
 )
 
 const (
@@ -96,7 +96,7 @@ func stepState(l *lexer.Lexer) lexer.StateFunc {
 			return nil
 
 		default:
-			return l.ErrorState("abrupt end to stepState")
+			return l.Error("abrupt end to stepState")
 		}
 	}
 }
@@ -141,7 +141,7 @@ func childState(l *lexer.Lexer) lexer.StateFunc {
 			return nil
 
 		default:
-			return l.ErrorState("abrupt end to childState")
+			return l.Error("abrupt end to childState")
 		}
 	}
 }
@@ -154,7 +154,7 @@ func predicateState(l *lexer.Lexer) lexer.StateFunc {
 				l.Emit(TFilterStart)
 				return filterState
 			}
-			return l.ErrorState("expecting (")
+			return l.Error("expecting (")
 
 		case t == '(':
 			l.Emit(TScriptStart)
@@ -184,7 +184,7 @@ func predicateExprState(l *lexer.Lexer) lexer.StateFunc {
 
 		case t == ':':
 			if inRange {
-				return l.ErrorState("invalid range")
+				return l.Error("invalid range")
 			}
 			if open {
 				l.Backup()
@@ -206,7 +206,7 @@ func predicateExprState(l *lexer.Lexer) lexer.StateFunc {
 			return predicateState
 
 		default:
-			return l.ErrorState("invalid predicate expression")
+			return l.Error("invalid predicate expression")
 		}
 	}
 }
@@ -219,7 +219,7 @@ func filterState(l *lexer.Lexer) lexer.StateFunc {
 			l.Emit(TFilterEnd)
 			return predicateState
 		default:
-			return l.ErrorState("invalid filter expression")
+			return l.Error("invalid filter expression")
 		}
 	}
 }
@@ -232,7 +232,7 @@ func scriptState(l *lexer.Lexer) lexer.StateFunc {
 			l.Emit(TScriptEnd)
 			return predicateState
 		default:
-			return l.ErrorState("invalid script expression")
+			return l.Error("invalid script expression")
 		}
 	}
 }

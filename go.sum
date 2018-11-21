@@ -1,4 +1,4 @@
-github.com/antchfx/xpath v0.0.0-20180922041825-3de91f3991a1 h1:nt4RMjvM9pJ5HR7WkCeAnDz1pgHbLT2vxICalUTWcJU=
-github.com/antchfx/xpath v0.0.0-20180922041825-3de91f3991a1/go.mod h1:Yee4kTMuNiPYJ7nSNorELQMr1J33uOpXDMByNYhvtNk=
 golang.org/x/net v0.0.0-20181102050134-b7e296877c6e h1:lIf8v8wMiSq+MBwNne+ZEkKrswgZ2NzQ1oeBn8eCA4c=
 golang.org/x/net v0.0.0-20181102050134-b7e296877c6e/go.mod h1:mL1N/T3taQHkDXs73rZJwtUhF3w3ftmwwsq0BUmARs4=
+src.userspace.com.au/lexer v0.0.0-20181120133623-bb0ecd84fc2b h1:63amMS0Dzr7wEqPCJBK7cIBsUjIBL7drgnyexhu8+rk=
+src.userspace.com.au/lexer v0.0.0-20181120133623-bb0ecd84fc2b/go.mod h1:nBlDlMd/paOz9tmRTQSN9zf54MlSMfWAgS1qO4a2Q6Y=

@@ -49,7 +49,7 @@ func TestParseJsonObject(t *testing.T) {
 	// <city>New York</city>
 	m := make(map[string]string)
 	for _, n := range doc.ChildNodes() {
-		m[n.Data] = n.InnerText()
+		m[n.Data()] = n.InnerText()
 	}
 	expected := []struct {
 		name, value string
@@ -72,7 +72,7 @@ func TestParseJsonObjectArray(t *testing.T) {
 			{ "name":"Fiat", "models":[ "500", "Panda" ] }
 			 ]`
 	doc, err := parseString(s)
-	doc.PrintTree(0)
+	//doc.PrintTree(0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +104,7 @@ func TestParseJsonObjectArray(t *testing.T) {
 		var name string
 		var models []string
 		for _, e := range n.ChildNodes() {
-			if e.Data == "name" {
+			if e.data == "name" {
 				// a name node.
 				name = e.InnerText()
 			} else {
@@ -151,7 +151,7 @@ func TestParseJson(t *testing.T) {
 	if n == nil {
 		t.Fatal("n is nil")
 	}
-	if n.NextSibling != nil {
+	if n.NextSibling() != nil {
 		t.Fatal("next sibling shoud be nil")
 	}
 	if e, g := "John", n.InnerText(); e != g {

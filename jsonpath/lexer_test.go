@@ -3,7 +3,7 @@ package jsonpath
 import (
 	"testing"
 
-	"src.userspace.com.au/query/lexer"
+	"src.userspace.com.au/lexer"
 )
 
 func TestValidStates(t *testing.T) {
