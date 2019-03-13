@@ -1,7 +1,7 @@
 package jsonpath
 
 import (
-	base "src.userspace.com.au/query"
+	base "src.userspace.com.au/felix/query"
 )
 
 type Selector func(base.Node) bool

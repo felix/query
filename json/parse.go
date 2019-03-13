@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strconv"
 
-	base "src.userspace.com.au/query"
+	base "src.userspace.com.au/felix/query"
 )
 
 // Parse JSON document.

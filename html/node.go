@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	x "golang.org/x/net/html"
-	base "src.userspace.com.au/query"
+	base "src.userspace.com.au/felix/query"
 )
 
 // A Node consists of a NodeType and some data (tag name for

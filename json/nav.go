@@ -1,7 +1,7 @@
 package json
 
 import (
-	base "src.userspace.com.au/query"
+	base "src.userspace.com.au/felix/query"
 )
 
 // NodeNavigator implements the Nav interface for navigating JSON nodes.

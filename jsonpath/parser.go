@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"strings"
 
-	"src.userspace.com.au/lexer"
-	base "src.userspace.com.au/query"
+	"src.userspace.com.au/felix/lexer"
+	base "src.userspace.com.au/felix/query"
 )
 
 type Parser struct {

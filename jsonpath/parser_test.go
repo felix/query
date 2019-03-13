@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"src.userspace.com.au/query/json"
+	"src.userspace.com.au/felix/query/json"
 )
 
 func TestParse(t *testing.T) {

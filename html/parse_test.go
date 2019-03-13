@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	base "src.userspace.com.au/query"
+	base "src.userspace.com.au/felix/query"
 )
 
 func TestParse(t *testing.T) {
